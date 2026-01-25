@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: orderStatusIntegration
+server:
+  port: ${PORT:8080}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Unified Orders</title>
+    <style>
+        table {
+            border-collapse: separate;
+            border-spacing: 12px 8px; /* horizontal | vertical spacing */
+            width: 100%;
+        }
+
+        th, td {
+            padding: 6px 10px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: bold;
+        }
+    </style>
+
+</head>
+<body>
+
+<div>
+    <h2>Unified Orders</h2>
+
+    <div>
+        <label><strong>Status:</strong></label>
+        <select id="statusFilter" onchange="loadOrders()">
+            <option value="">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Source</th>
+        </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+    </table>
+</div>
+
+<script th:inline="javascript">
+    const API_BASE = /*[[@{/api}]]*/ '/api';
+
+    function loadOrders() {
+        const status = document.getElementById('statusFilter').value;
+        let url = API_BASE + '/orders';
+        if (status) url += '/search?status=' + encodeURIComponent(status);
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                const tbody = document.getElementById('ordersBody');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="6" class="empty">No orders found</td></tr>';
+                    return;
+                }
+
+                data.forEach(o => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${o.orderId || ''}</td>
+                            <td>${o.customerName || ''}</td>
+                            <td>${o.orderDate || ''}</td>
+                            <td>$${o.totalAmount || ''}</td>
+                            <td>
+                                <span class="badge ${o.status}">
+                                    ${o.status || ''}
+                                </span>
+                            </td>
+                            <td>${o.sourceSystem || ''}</td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(() => alert('Failed to load orders'));
+    }
+
+    window.onload = loadOrders;
+</script>
+
+</body>
+</html>

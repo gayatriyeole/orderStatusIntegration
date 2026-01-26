@@ -1,12 +1,30 @@
-# ---------- Build stage ----------
-
 FROM gradle:8.5-jdk17 AS build
 
 WORKDIR /app
 
-COPY . .
 
-RUN ./gradlew bootJar --no-daemon
+
+# Copy Gradle files for caching
+
+COPY gradle gradle
+
+COPY gradlew .
+
+COPY build.gradle settings.gradle ./
+
+
+
+# Download dependencies
+
+RUN ./gradlew dependencies --no-daemon
+
+
+
+# Copy source and build
+
+COPY src src
+
+RUN ./gradlew clean bootJar --no-daemon
 
 
 
@@ -16,7 +34,13 @@ FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
+
+
+# Copy the jar from build stage
+
 COPY --from=build /app/build/libs/*.jar app.jar
+
+
 
 
 
@@ -26,5 +50,6 @@ EXPOSE 8080
 
 
 
-ENTRYPOINT ["java","-XX:MaxRAMPercentage=75.0","-jar","app.jar”]
+# Start Spring Boot app
 
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
